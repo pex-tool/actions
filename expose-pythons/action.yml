@@ -14,21 +14,23 @@ runs:
       run: |
         echo "::group::Exposing Pythons"
         for python_version in ${RUNNER_TOOL_CACHE}/Python/*; do
-          python_location="${python_version}/$(ls "${python_version}" | grep -i "${RUNNER_ARCH}")"
-          # N.B.: Python 2.7 prints the version to stderr so we re-direct to get output all on one
-          # line in that case.
-          python_bin_dir="${python_location}/bin"
-          python_exe="${python_bin_dir}/python"
-          python_version="$("${python_exe}" -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")"
-          if [[ "${{ inputs.skip }}" =~ "${python_version}" ]]; then
-            echo "Skipping ${python_bin_dir}: $("${python_exe}" --version 2>&1)"
-          else
-            echo "Exposing ${python_bin_dir}: $("${python_exe}" --version 2>&1)"
-            PATH="${PATH}:${python_bin_dir}"
+          for arch_dir in "$(ls "${python_version}" | grep -i "${RUNNER_ARCH}")"; do
+            python_location="${python_version}/${arch_dir}"
+            # N.B.: Python 2.7 prints the version to stderr so we re-direct to get output all on one
+            # line in that case.
+            python_bin_dir="${python_location}/bin"
+            python_exe="${python_bin_dir}/python"
+            python_version="$("${python_exe}" -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")"
+            if [[ "${{ inputs.skip }}" =~ "${python_version}" ]]; then
+              echo "Skipping ${python_bin_dir}: $("${python_exe}" --version 2>&1)"
+            else
+              echo "Exposing ${python_bin_dir}: $("${python_exe}" --version 2>&1)"
+              PATH="${PATH}:${python_bin_dir}"
 
-            python_lib_dir="${python_location}/lib"
-            LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${python_lib_dir}"
-          fi
+              python_lib_dir="${python_location}/lib"
+              LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${python_lib_dir}"
+            fi
+          done
         done
         echo "::endgroup::"
 
